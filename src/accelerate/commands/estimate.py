@@ -314,12 +314,12 @@ def estimate(args):
     for row in data:
         for i, item in enumerate(row):
             if isinstance(item, (int, float)):
-                row[i] = convert_bytes(item)
+                row[i] = item
             elif isinstance(item, dict):
                 training_usage = max(item.values())
-                row[i] = convert_bytes(training_usage) if training_usage != -1 else "N/A"
+                row[i] = training_usage if training_usage != -1 else "N/A"
 
-    headers = ["dtype", "Largest Layer", "Total Size", "Training using Adam"]
+    headers = ["d_type", "largest_layer", "total_size", "training_using_adam"]
 
     return create_dict(headers, data)
 
