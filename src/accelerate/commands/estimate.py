@@ -13,6 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
+
 from huggingface_hub import model_info
 from huggingface_hub.utils import GatedRepoError, RepositoryNotFoundError
 
@@ -177,6 +179,24 @@ def create_ascii_table(headers: list, rows: list, title: str):
     return table
 
 
+def create_dict(headers: list, rows: list) -> dict:
+    data_dict = {}
+    for row in rows:
+        dtype = row[0]
+
+        data_dict[dtype] = {}
+
+        data = zip(headers[1:], row[1:])
+
+        for dtype_attr_pair in data:
+            name = dtype_attr_pair[0]
+            value = dtype_attr_pair[1]
+
+            data_dict[dtype][name] = value
+
+    return data_dict
+
+
 def estimate_command_parser(subparsers=None):
     if subparsers is not None:
         parser = subparsers.add_parser("estimate-memory")
@@ -205,6 +225,13 @@ def estimate_command_parser(subparsers=None):
                 should only be used for repositories you trust and in which you have read the code, as it will execute
                 code present on the Hub on your local machine.""",
         default=False,
+    )
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        help="The format that will be applied to the output of the command.",
+        choices=["table", "json"],
+        default='table',
     )
 
     if subparsers is not None:
@@ -280,6 +307,21 @@ def gather_data(args):
             dtype_largest_layer /= 8
         data.append([dtype, dtype_largest_layer, dtype_total_size, dtype_training_size])
     return data
+
+
+def estimate(args):
+    data = gather_data(args)
+    for row in data:
+        for i, item in enumerate(row):
+            if isinstance(item, (int, float)):
+                row[i] = convert_bytes(item)
+            elif isinstance(item, dict):
+                training_usage = max(item.values())
+                row[i] = convert_bytes(training_usage) if training_usage != -1 else "N/A"
+
+    headers = ["dtype", "Largest Layer", "Total Size", "Training using Adam"]
+
+    return create_dict(headers, data)
 
 
 def estimate_command(args):
