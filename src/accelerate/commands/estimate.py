@@ -233,6 +233,12 @@ def estimate_command_parser(subparsers=None):
         choices=["table", "json"],
         default='table',
     )
+    parser.add_argument(
+        "--access_token",
+        type=str,
+        help="A Hugging Face access token to use when loading the model.",
+        default=None,
+    )
 
     if subparsers is not None:
         parser.set_defaults(func=estimate_command)
@@ -278,7 +284,7 @@ def gather_data(args):
     "Creates an empty model and gathers the data for the sizes"
     try:
         model = create_empty_model(
-            args.model_name, library_name=args.library_name, trust_remote_code=args.trust_remote_code
+            args.model_name, library_name=args.library_name, trust_remote_code=args.trust_remote_code, access_token=args.access_token,
         )
     except (RuntimeError, OSError) as e:
         library = check_has_model(e)
